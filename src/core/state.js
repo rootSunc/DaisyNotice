@@ -6,7 +6,6 @@ function defaultState() {
   return {
     version: 1,
     lastRunAt: null,
-    seen: {},
   };
 }
 
@@ -15,14 +14,25 @@ export async function loadState() {
 
   try {
     const raw = await fs.readFile(config.statePath, "utf8");
+    // Handle empty or invalid JSON files
+    if (!raw || !raw.trim()) {
+      return defaultState();
+    }
     const parsed = JSON.parse(raw);
     return {
       ...defaultState(),
       ...parsed,
-      seen: parsed?.seen && typeof parsed.seen === "object" ? parsed.seen : {},
     };
   } catch (error) {
     if (error.code === "ENOENT") {
+      return defaultState();
+    }
+    // Return default state for invalid JSON instead of throwing
+    if (error instanceof SyntaxError) {
+      console.warn(
+        "State file is corrupted or invalid, starting fresh:",
+        error.message,
+      );
       return defaultState();
     }
 
@@ -37,15 +47,16 @@ export async function saveState(state) {
   await fs.rename(tempPath, config.statePath);
 }
 
-export function hasSeenMessage(state, messageId) {
-  return Boolean(state.seen[messageId]);
-}
-
-export function rememberMessage(state, message) {
-  state.seen[message.id] = {
-    title: message.title,
-    timestamp: message.timestamp,
-    preview: message.body.slice(0, 200),
-    firstSeenAt: new Date().toISOString(),
-  };
+/**
+ * Check if a message is new based on its timestamp compared to lastRunAt
+ * @param {Object} state - Current state with lastRunAt timestamp
+ * @param {Date} messageDate - Parsed date of the message
+ * @returns {boolean} true if message is newer than last run
+ */
+export function isNewMessage(state, messageDate) {
+  if (!state.lastRunAt) {
+    return false; // During initial sync, no messages are considered "new"
+  }
+  const lastRun = new Date(state.lastRunAt);
+  return messageDate > lastRun;
 }
