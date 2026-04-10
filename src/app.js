@@ -6,25 +6,69 @@ import {
   collectMessages,
   saveDebugArtifacts,
 } from "./core/pilke.js";
-import {
-  loadState,
-  saveState,
-  hasSeenMessage,
-  rememberMessage,
-} from "./core/state.js";
+import { loadState, saveState, isNewMessage } from "./core/state.js";
 import fs from "node:fs";
 
-export async function runPoll({ forceNotifyAll = false } = {}) {
+// Parse timestamp string like "09:41, 27.02." to a Date object
+// Assumes current year if year is not provided
+function parseTimestamp(timestampStr) {
+  if (!timestampStr || typeof timestampStr !== "string") {
+    return new Date(0); // Fallback to epoch if invalid
+  }
+
+  // Handle format: "HH:MM, DD.MM." or similar variations
+  const pattern = /(\d{1,2}):(\d{2}),\s*(\d{1,2})\.(\d{2})\./;
+  const match = timestampStr.match(pattern);
+
+  if (!match) {
+    return new Date(0); // Fallback if pattern doesn't match
+  }
+
+  const [, hours, minutes, day, month] = match;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  // Create date with current year, parsed month and day
+  // Note: months are 0-indexed in Date constructor
+  const date = new Date(
+    currentYear,
+    parseInt(month, 10) - 1,
+    parseInt(day, 10),
+    parseInt(hours, 10),
+    parseInt(minutes, 10),
+  );
+
+  // If the parsed date is in the future, use previous year
+  if (date > now) {
+    date.setFullYear(currentYear - 1);
+  }
+
+  return date;
+}
+
+// Sort messages by timestamp from oldest to newest
+function sortMessagesByTimestamp(messages) {
+  return messages.sort((a, b) => {
+    const dateA = parseTimestamp(a.timestamp);
+    const dateB = parseTimestamp(b.timestamp);
+    return dateA.getTime() - dateB.getTime();
+  });
+}
+
+export async function runPoll({
+  forceNotifyAll = false,
+  messagesToNotify = null,
+} = {}) {
   const state = await loadState();
   const { browser, context } = await launchPilkeContext({
     headless: true,
-    storageState: true,
+    storageState: false,
   });
   const page = await context.newPage();
 
   try {
     await openMessagesPage(page);
-    const messages = await collectMessages(page);
+    let messages = await collectMessages(page);
 
     if (messages.length === 0) {
       await saveDebugArtifacts(page, "no-messages");
@@ -33,16 +77,26 @@ export async function runPoll({ forceNotifyAll = false } = {}) {
       );
     }
 
-    const isFirstSync = Object.keys(state.seen).length === 0;
+    // For forceNotifyAll, always sort by timestamp (oldest to newest)
+    if (forceNotifyAll) {
+      messages = sortMessagesByTimestamp(messages);
+      // If messagesToNotify is specified, filter to only the last N messages
+      if (messagesToNotify !== null) {
+        messages = messages.slice(-messagesToNotify);
+        console.log(
+          `Filtered to the last ${messages.length} message(s) out of total.`,
+        );
+      }
+    }
+
+    // Check if this is the first sync (no lastRunAt timestamp yet)
+    const isFirstSync = !state.lastRunAt;
     if (
       !forceNotifyAll &&
       isFirstSync &&
       config.initialSyncMode === "mark-seen"
     ) {
-      for (const message of messages) {
-        rememberMessage(state, message);
-      }
-
+      // First sync: mark all current messages as seen by setting lastRunAt
       state.lastRunAt = new Date().toISOString();
       await saveState(state);
       return {
@@ -54,7 +108,10 @@ export async function runPoll({ forceNotifyAll = false } = {}) {
 
     let notifiedMessages = 0;
     for (const message of messages) {
-      if (!forceNotifyAll && hasSeenMessage(state, message.id)) {
+      const messageDate = parseTimestamp(message.timestamp);
+
+      // Skip message if it's not new (unless forceNotifyAll is set)
+      if (!forceNotifyAll && !isNewMessage(state, messageDate)) {
         continue;
       }
 
@@ -72,9 +129,7 @@ export async function runPoll({ forceNotifyAll = false } = {}) {
       await applyTranslationIfNeeded(message);
 
       await sendFormattedNotification(config, message, attachments);
-      rememberMessage(state, message);
       notifiedMessages += 1;
-      await saveState(state);
 
       // Cleanup tmp attachments
       for (const filePath of attachments) {
