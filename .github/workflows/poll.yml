@@ -1,0 +1,71 @@
+name: DaisyNotice Poll
+
+on:
+  schedule:
+    # 每天 UTC 时间 12:00 运行 (根据需要修改)
+    - cron: '0 12 * * *'
+  
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    
+    # 配置 Git 提交权限
+    permissions:
+      contents: write
+    
+    steps:
+      # 签出代码 (保留历史，便于后续 git 操作)
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      # 设置 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      # 安装依赖
+      - name: Install dependencies
+        run: npm ci
+      
+      # 配置 Git (用于自动提交)
+      - name: Configure git
+        run: |
+          git config --global user.name "daisy-notice-bot"
+          git config --global user.email "daisy-notice-bot@github.com"
+      
+      # 运行轮询
+      - name: Run poll
+        env:
+          # 环境变量从 GitHub Secrets 读取
+          PILKE_BASE_URL: ${{ secrets.PILKE_BASE_URL }}
+          MESSAGES_URL: ${{ secrets.MESSAGES_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
+          POLL_INTERVAL_HOURS: ${{ secrets.POLL_INTERVAL_HOURS || '24' }}
+          INITIAL_SYNC_MODE: ${{ secrets.INITIAL_SYNC_MODE || 'mark-seen' }}
+          MESSAGE_ROW_SELECTOR: ${{ secrets.MESSAGE_ROW_SELECTOR }}
+          MESSAGE_TITLE_SELECTOR: ${{ secrets.MESSAGE_TITLE_SELECTOR }}
+          MESSAGE_BODY_SELECTOR: ${{ secrets.MESSAGE_BODY_SELECTOR }}
+          MESSAGE_DATE_SELECTOR: ${{ secrets.MESSAGE_DATE_SELECTOR }}
+          MESSAGES_NAV_LABELS: ${{ secrets.MESSAGES_NAV_LABELS || 'Viestit,Messages,Inbox' }}
+          NOTIFICATION_CHANNELS: ${{ secrets.NOTIFICATION_CHANNELS || 'telegram' }}
+          DEBUG_CAPTURE: ${{ secrets.DEBUG_CAPTURE || '0' }}
+        run: npm run poll
+      
+      # 自动提交数据文件变更 (仅 state.json，无需登录会话)
+      - name: Auto-commit polling data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): update polling state [${{ github.run_number }}]"
+          commit_options: '--no-verify'
+          file_pattern: 'data/state.json'
+          skip_dirty_check: true
+          status_options: '--porcelain'
