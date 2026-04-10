@@ -1,0 +1,25 @@
+{
+  "name": "daisy-notice",
+  "version": "0.1.0",
+  "description": "Pilke DaisyFamily message polling and Telegram notification tool",
+  "author": "Charles",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/daisy-notice"
+  },
+  "type": "module",
+  "scripts": {
+    "auth": "node src/commands/auth.js",
+    "poll": "node src/commands/poll.js",
+    "notify-all": "node src/commands/notify-all.js",
+    "start": "node src/commands/loop.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.54.2"
+  }
+}
