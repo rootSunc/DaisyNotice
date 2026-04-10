@@ -167,7 +167,25 @@ export async function sendNotification(config, text, attachments = []) {
 }
 
 /**
- * Format message and send via all configured channels
+ * Determine which channels to use based on configuration
+ * @param {object} config - Configuration object
+ * @returns {object} Object with telegram and wechat boolean flags
+ */
+function getChannelsToUse(config) {
+  const channels = config.notificationChannels || ["both"];
+  const useTelegram =
+    (channels.includes("telegram") || channels.includes("both")) &&
+    config.telegramBotToken &&
+    config.telegramChatId;
+  const useWechat =
+    (channels.includes("wechat") || channels.includes("both")) &&
+    config.wechatWebhookUrl;
+
+  return { useTelegram, useWechat };
+}
+
+/**
+ * Format message and send via selected notification channels
  * @param {object} config - Configuration object
  * @param {object} message - Message object
  * @param {array} attachments - Optional file paths
@@ -177,13 +195,24 @@ export async function sendFormattedNotification(
   message,
   attachments = [],
 ) {
-  const telegramText = formatTelegramMessage(message);
-  const wechatText = formatWechatMessage(message);
+  const { useTelegram, useWechat } = getChannelsToUse(config);
+
+  // Check if at least one channel is available
+  if (!useTelegram && !useWechat) {
+    const configuredChannels = config.notificationChannels?.join(",") || "both";
+    throw new Error(
+      `No available notification channel for '${configuredChannels}'. ` +
+        `Ensure TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID or WECHAT_WEBHOOK_URL are set in .env`,
+    );
+  }
+
+  const telegramText = useTelegram ? formatTelegramMessage(message) : "";
+  const wechatText = useWechat ? formatWechatMessage(message) : "";
 
   const errors = [];
 
-  // Send via Telegram if configured
-  if (config.telegramBotToken && config.telegramChatId) {
+  // Send via Telegram if selected
+  if (useTelegram) {
     try {
       await sendTelegramMessage(config, telegramText, attachments);
       console.log("✓ Message sent via Telegram");
@@ -193,8 +222,8 @@ export async function sendFormattedNotification(
     }
   }
 
-  // Send via WeChat if configured
-  if (config.wechatWebhookUrl) {
+  // Send via WeChat if selected
+  if (useWechat) {
     try {
       // Use markdown for WeChat for better formatting
       const wechatMarkdown = formatWechatMessageAsMarkdown(message);
@@ -206,18 +235,10 @@ export async function sendFormattedNotification(
     }
   }
 
-  // If no notification channel is configured
-  if (!config.telegramBotToken && !config.wechatWebhookUrl) {
-    throw new Error(
-      "No notification channel configured. Set TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID or WECHAT_WEBHOOK_URL in .env",
-    );
-  }
-
   // If all channels failed
   if (
     errors.length > 0 &&
-    errors.length ===
-      (config.telegramBotToken ? 1 : 0) + (config.wechatWebhookUrl ? 1 : 0)
+    errors.length === (useTelegram ? 1 : 0) + (useWechat ? 1 : 0)
   ) {
     throw new Error(`All notification channels failed:\n${errors.join("\n")}`);
   }

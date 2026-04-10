@@ -1,6 +1,6 @@
 /**
  * WeChat notification module
- * Supports Enterprise WeChat (企业微信) webhook API
+ * Supports Enterprise WeChat webhook API
  */
 
 import { validateWechatConfig } from "../config.js";
