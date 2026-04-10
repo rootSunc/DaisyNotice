@@ -16,7 +16,7 @@
     "start": "node src/commands/loop.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
