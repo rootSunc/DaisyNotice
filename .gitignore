@@ -1,6 +1,6 @@
 node_modules/
 .env
-data/
+data/*
 !data/state.json
 npm-debug.log*
 .DS_Store

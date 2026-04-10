@@ -1,5 +1,5 @@
 import { config } from "./config.js";
-import { sendFormattedNotification } from "./core/notifier.js";
+import { sendFormattedNotification, sendNotification } from "./core/notifier.js";
 import {
   launchPilkeContext,
   openMessagesPage,
