@@ -2,11 +2,11 @@
   "name": "daisy-notice",
   "version": "0.1.0",
   "description": "Pilke DaisyFamily message polling and Telegram notification tool",
-  "author": "Charles",
+  "author": "Chao Sun",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/daisy-notice"
+    "url": "https://github.com/rootSunc/daisy-notice"
   },
   "type": "module",
   "scripts": {
