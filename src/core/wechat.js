@@ -141,16 +141,16 @@ export async function sendWechatMarkdownMessage(config, markdown) {
  */
 export function formatWechatMessage(message) {
   const lines = [
-    "📩 **Pilke DaisyFamily 新消息**",
+    "📩 **Pilke DaisyFamily New Message**",
     "",
-    `**标题**: ${message.title || "(无标题)"}`,
+    `**Title**: ${message.title || "(Untitled)"}`,
   ];
 
   if (message.sender) {
-    lines.push(`**发送者**: ${message.sender}`);
+    lines.push(`**Sender**: ${message.sender}`);
   }
 
-  lines.push(`**时间**: ${message.timestamp || "未知"}`);
+  lines.push(`**Time**: ${message.timestamp || "Unknown"}`);
   lines.push("");
 
   if (message.body) {
@@ -158,7 +158,7 @@ export function formatWechatMessage(message) {
     lines.push("");
   }
 
-  lines.push(`**消息ID**: ${message.id}`);
+  lines.push(`**Message ID**: ${message.id}`);
 
   return lines.join("\n");
 }
