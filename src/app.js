@@ -99,6 +99,17 @@ export async function runPoll({
       // First sync: mark all current messages as seen by setting lastRunAt
       state.lastRunAt = new Date().toISOString();
       await saveState(state);
+
+      // Send a success notification to confirm setup is working
+      try {
+        await sendNotification(
+          config,
+          "🚀 DaisyNotice successfully initialized! I am now monitoring for new messages.",
+        );
+      } catch (e) {
+        console.error("Failed to send initialization notification:", e.message);
+      }
+
       return {
         mode: "seeded",
         totalMessages: messages.length,
