@@ -50,6 +50,11 @@ export const config = {
     "Messages",
     "Inbox",
   ]),
+  notificationChannels: (process.env.NOTIFICATION_CHANNELS || "both")
+    .toLowerCase()
+    .split(",")
+    .map((ch) => ch.trim())
+    .filter((ch) => ["telegram", "wechat", "both"].includes(ch)),
   debugCapture: process.env.DEBUG_CAPTURE === "1",
 };
 
