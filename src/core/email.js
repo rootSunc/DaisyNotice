@@ -83,6 +83,14 @@ function getTransportServername(config) {
   return net.isIP(config.emailSmtpHost) ? undefined : config.emailSmtpHost;
 }
 
+function getEmailProvider(config) {
+  if (config.emailProvider === "webhook" || config.emailProvider === "smtp") {
+    return config.emailProvider;
+  }
+
+  return config.emailWebhookUrl ? "webhook" : "smtp";
+}
+
 async function sendEmailViaWebhook(config, text, attachments, subject) {
   const response = await fetch(config.emailWebhookUrl, {
     method: "POST",
@@ -180,7 +188,10 @@ export async function sendEmailMessage(
 ) {
   validateEmailConfig(config);
 
-  if (config.emailWebhookUrl) {
+  const provider = getEmailProvider(config);
+  console.log(`Email delivery provider: ${provider}`);
+
+  if (provider === "webhook") {
     await sendEmailViaWebhook(config, text, attachments, subject);
     return;
   }

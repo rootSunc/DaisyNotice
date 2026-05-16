@@ -90,15 +90,8 @@ jobs:
           WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
           EMAIL_WEBHOOK_URL: ${{ secrets.EMAIL_WEBHOOK_URL || secrets.MAIL_WEBHOOK_URL }}
           EMAIL_WEBHOOK_TOKEN: ${{ secrets.EMAIL_WEBHOOK_TOKEN || secrets.MAIL_WEBHOOK_TOKEN }}
-          EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
-          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT || '465' }}
-          EMAIL_SMTP_SECURE: ${{ secrets.EMAIL_SMTP_SECURE || secrets.SMTP_SECURE }}
-          EMAIL_SMTP_FALLBACK_PORT: ${{ secrets.EMAIL_SMTP_FALLBACK_PORT || secrets.SMTP_FALLBACK_PORT || '587' }}
-          EMAIL_SMTP_FALLBACK_SECURE: ${{ secrets.EMAIL_SMTP_FALLBACK_SECURE || secrets.SMTP_FALLBACK_SECURE || 'false' }}
-          EMAIL_SMTP_FAMILY: ${{ secrets.EMAIL_SMTP_FAMILY || secrets.SMTP_FAMILY || '4' }}
-          EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
-          EMAIL_SMTP_PASS: ${{ secrets.EMAIL_SMTP_PASS || secrets.SMTP_PASS }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM || secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_PROVIDER: webhook
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO || secrets.MAIL_TO }}
           POLL_INTERVAL_HOURS: ${{ secrets.POLL_INTERVAL_HOURS || '24' }}
           INITIAL_SYNC_MODE: ${{ secrets.INITIAL_SYNC_MODE || 'mark-seen' }}
@@ -120,15 +113,8 @@ jobs:
           WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
           EMAIL_WEBHOOK_URL: ${{ secrets.EMAIL_WEBHOOK_URL || secrets.MAIL_WEBHOOK_URL }}
           EMAIL_WEBHOOK_TOKEN: ${{ secrets.EMAIL_WEBHOOK_TOKEN || secrets.MAIL_WEBHOOK_TOKEN }}
-          EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
-          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT || '465' }}
-          EMAIL_SMTP_SECURE: ${{ secrets.EMAIL_SMTP_SECURE || secrets.SMTP_SECURE }}
-          EMAIL_SMTP_FALLBACK_PORT: ${{ secrets.EMAIL_SMTP_FALLBACK_PORT || secrets.SMTP_FALLBACK_PORT || '587' }}
-          EMAIL_SMTP_FALLBACK_SECURE: ${{ secrets.EMAIL_SMTP_FALLBACK_SECURE || secrets.SMTP_FALLBACK_SECURE || 'false' }}
-          EMAIL_SMTP_FAMILY: ${{ secrets.EMAIL_SMTP_FAMILY || secrets.SMTP_FAMILY || '4' }}
-          EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
-          EMAIL_SMTP_PASS: ${{ secrets.EMAIL_SMTP_PASS || secrets.SMTP_PASS }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM || secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_PROVIDER: webhook
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO || secrets.MAIL_TO }}
           NOTIFICATION_CHANNELS: ${{ secrets.NOTIFICATION_CHANNELS || 'telegram' }}
         run: npm run notify-test

@@ -127,13 +127,20 @@ export function formatTelegramMessage(message) {
  * @param {array} attachments - Optional file paths
  */
 export async function sendNotification(config, text, attachments = []) {
-  const { useTelegram, useWechat, useEmail } = getChannelsToUse(config);
+  const { useTelegram, useWechat, useEmail, wantsEmail } =
+    getChannelsToUse(config);
 
   if (!useTelegram && !useWechat && !useEmail) {
     const configuredChannels = config.notificationChannels?.join(",") || "both";
     throw new Error(
       `No available notification channel for '${configuredChannels}'. ` +
         "Ensure the selected channel secrets are configured.",
+    );
+  }
+  if (wantsEmail && !useEmail) {
+    throw new Error(
+      "Email channel selected but email is not configured. " +
+        "For GitHub Actions set EMAIL_WEBHOOK_URL, EMAIL_WEBHOOK_TOKEN, EMAIL_FROM, and EMAIL_TO.",
     );
   }
 
@@ -197,7 +204,14 @@ function getChannelsToUse(config) {
     config.telegramBotToken && config.telegramChatId,
   );
   const hasWechatConfig = Boolean(config.wechatWebhookUrl);
+  const wantsWebhookEmail =
+    config.emailProvider === "webhook" ||
+    (config.emailProvider === "auto" && config.emailWebhookUrl);
+  const wantsSmtpEmail =
+    config.emailProvider === "smtp" ||
+    (config.emailProvider === "auto" && !config.emailWebhookUrl);
   const hasSmtpEmailConfig = Boolean(
+    wantsSmtpEmail &&
     config.emailSmtpHost &&
       config.emailSmtpUser &&
       config.emailSmtpPass &&
@@ -205,6 +219,7 @@ function getChannelsToUse(config) {
       config.emailTo?.length,
   );
   const hasWebhookEmailConfig = Boolean(
+    wantsWebhookEmail &&
     config.emailWebhookUrl &&
       config.emailWebhookToken &&
       config.emailFrom &&
@@ -215,10 +230,11 @@ function getChannelsToUse(config) {
     (channels.includes("telegram") || useBoth || useAll) && hasTelegramConfig;
   const useWechat =
     (channels.includes("wechat") || useBoth || useAll) && hasWechatConfig;
+  const wantsEmail = channels.includes("email") || useAll;
   const useEmail =
-    (channels.includes("email") || useAll) && hasEmailConfig;
+    wantsEmail && hasEmailConfig;
 
-  return { useTelegram, useWechat, useEmail };
+  return { useTelegram, useWechat, useEmail, wantsEmail };
 }
 
 /**
@@ -232,7 +248,8 @@ export async function sendFormattedNotification(
   message,
   attachments = [],
 ) {
-  const { useTelegram, useWechat, useEmail } = getChannelsToUse(config);
+  const { useTelegram, useWechat, useEmail, wantsEmail } =
+    getChannelsToUse(config);
 
   // Check if at least one channel is available
   if (!useTelegram && !useWechat && !useEmail) {
@@ -240,6 +257,12 @@ export async function sendFormattedNotification(
     throw new Error(
       `No available notification channel for '${configuredChannels}'. ` +
         "Ensure the selected channel secrets are configured.",
+    );
+  }
+  if (wantsEmail && !useEmail) {
+    throw new Error(
+      "Email channel selected but email is not configured. " +
+        "For GitHub Actions set EMAIL_WEBHOOK_URL, EMAIL_WEBHOOK_TOKEN, EMAIL_FROM, and EMAIL_TO.",
     );
   }
 

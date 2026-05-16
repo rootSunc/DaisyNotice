@@ -51,6 +51,18 @@ function parseList(value, fallback) {
     .filter(Boolean);
 }
 
+function parseEmailProvider(value, fallback) {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (["auto", "webhook", "smtp"].includes(normalized)) {
+    return normalized;
+  }
+
+  return fallback;
+}
+
 const rootDir = process.cwd();
 const dataDir = path.resolve(rootDir, "data");
 const debugDir = path.join(dataDir, "debug");
@@ -82,6 +94,7 @@ export const config = {
     process.env.EMAIL_WEBHOOK_URL || process.env.MAIL_WEBHOOK_URL || "",
   emailWebhookToken:
     process.env.EMAIL_WEBHOOK_TOKEN || process.env.MAIL_WEBHOOK_TOKEN || "",
+  emailProvider: parseEmailProvider(process.env.EMAIL_PROVIDER, "auto"),
   emailSmtpHost: process.env.EMAIL_SMTP_HOST || process.env.SMTP_HOST || "",
   emailSmtpPort,
   emailSmtpSecure: parseBoolean(
@@ -146,12 +159,21 @@ export function validateWechatConfig(targetConfig = config) {
 
 export function validateEmailConfig(targetConfig = config) {
   const missing = [];
+  const useWebhook =
+    targetConfig.emailProvider === "webhook" ||
+    (targetConfig.emailProvider === "auto" && targetConfig.emailWebhookUrl);
+  const useSmtp =
+    targetConfig.emailProvider === "smtp" ||
+    (targetConfig.emailProvider === "auto" && !targetConfig.emailWebhookUrl);
 
-  if (targetConfig.emailWebhookUrl && !targetConfig.emailWebhookToken) {
+  if (useWebhook && !targetConfig.emailWebhookUrl) {
+    missing.push("EMAIL_WEBHOOK_URL");
+  }
+  if (useWebhook && !targetConfig.emailWebhookToken) {
     missing.push("EMAIL_WEBHOOK_TOKEN");
   }
 
-  if (!targetConfig.emailWebhookUrl) {
+  if (useSmtp) {
     if (!targetConfig.emailSmtpHost) missing.push("EMAIL_SMTP_HOST");
     if (!targetConfig.emailSmtpUser) missing.push("EMAIL_SMTP_USER");
     if (!targetConfig.emailSmtpPass) missing.push("EMAIL_SMTP_PASS");
