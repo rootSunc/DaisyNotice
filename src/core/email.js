@@ -65,17 +65,12 @@ function getTransportServername(config) {
   return net.isIP(config.emailSmtpHost) ? undefined : config.emailSmtpHost;
 }
 
-export async function sendEmailMessage(
-  config,
-  text,
-  attachments = [],
-  subject = "DaisyNotice Notification",
-) {
-  validateEmailConfig(config);
-
+async function sendEmailWithTransportConfig(config, text, attachments, subject) {
   const servername = getTransportServername(config);
+  const host = await getTransportHost(config);
+
   const transporter = nodemailer.createTransport({
-    host: await getTransportHost(config),
+    host,
     port: config.emailSmtpPort,
     secure: config.emailSmtpSecure,
     servername,
@@ -96,4 +91,65 @@ export async function sendEmailMessage(
     text,
     attachments: getExistingAttachments(attachments),
   });
+}
+
+function isConnectionTimeout(error) {
+  return (
+    error?.code === "ETIMEDOUT" ||
+    error?.code === "ESOCKET" ||
+    /connection timeout|timed out/i.test(error?.message || "")
+  );
+}
+
+function getFallbackConfig(config, error) {
+  if (
+    !isConnectionTimeout(error) ||
+    config.emailSmtpPort !== 465 ||
+    !config.emailSmtpFallbackPort ||
+    config.emailSmtpFallbackPort === config.emailSmtpPort
+  ) {
+    return null;
+  }
+
+  return {
+    ...config,
+    emailSmtpPort: config.emailSmtpFallbackPort,
+    emailSmtpSecure: config.emailSmtpFallbackSecure,
+  };
+}
+
+export async function sendEmailMessage(
+  config,
+  text,
+  attachments = [],
+  subject = "DaisyNotice Notification",
+) {
+  validateEmailConfig(config);
+
+  try {
+    await sendEmailWithTransportConfig(config, text, attachments, subject);
+  } catch (error) {
+    const fallbackConfig = getFallbackConfig(config, error);
+    if (!fallbackConfig) {
+      throw error;
+    }
+
+    console.warn(
+      `Email SMTP connection to ${config.emailSmtpHost}:${config.emailSmtpPort} timed out. ` +
+        `Retrying ${fallbackConfig.emailSmtpHost}:${fallbackConfig.emailSmtpPort}.`,
+    );
+
+    try {
+      await sendEmailWithTransportConfig(
+        fallbackConfig,
+        text,
+        attachments,
+        subject,
+      );
+    } catch (fallbackError) {
+      throw new Error(
+        `Primary SMTP failed: ${error.message}; fallback SMTP failed: ${fallbackError.message}`,
+      );
+    }
+  }
 }

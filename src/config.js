@@ -58,6 +58,10 @@ const emailSmtpPort = parsePositiveInteger(
   process.env.EMAIL_SMTP_PORT || process.env.SMTP_PORT,
   465,
 );
+const emailSmtpFallbackPort = parsePositiveInteger(
+  process.env.EMAIL_SMTP_FALLBACK_PORT || process.env.SMTP_FALLBACK_PORT,
+  587,
+);
 
 export const config = {
   rootDir,
@@ -79,6 +83,11 @@ export const config = {
   emailSmtpSecure: parseBoolean(
     process.env.EMAIL_SMTP_SECURE || process.env.SMTP_SECURE,
     emailSmtpPort === 465,
+  ),
+  emailSmtpFallbackPort,
+  emailSmtpFallbackSecure: parseBoolean(
+    process.env.EMAIL_SMTP_FALLBACK_SECURE || process.env.SMTP_FALLBACK_SECURE,
+    emailSmtpFallbackPort === 465,
   ),
   emailSmtpFamily: parseSmtpFamily(
     process.env.EMAIL_SMTP_FAMILY || process.env.SMTP_FAMILY,

@@ -54,6 +54,8 @@ Email delivery requires an SMTP sender account. Recipient mailboxes do not need 
 EMAIL_SMTP_HOST=smtp.example.com
 EMAIL_SMTP_PORT=465
 EMAIL_SMTP_SECURE=true
+EMAIL_SMTP_FALLBACK_PORT=587
+EMAIL_SMTP_FALLBACK_SECURE=false
 EMAIL_SMTP_FAMILY=4
 EMAIL_SMTP_USER=notice@example.com
 EMAIL_SMTP_PASS=your-app-password

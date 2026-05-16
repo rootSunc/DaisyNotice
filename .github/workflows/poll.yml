@@ -91,6 +91,8 @@ jobs:
           EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
           EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT || '465' }}
           EMAIL_SMTP_SECURE: ${{ secrets.EMAIL_SMTP_SECURE || secrets.SMTP_SECURE }}
+          EMAIL_SMTP_FALLBACK_PORT: ${{ secrets.EMAIL_SMTP_FALLBACK_PORT || secrets.SMTP_FALLBACK_PORT || '587' }}
+          EMAIL_SMTP_FALLBACK_SECURE: ${{ secrets.EMAIL_SMTP_FALLBACK_SECURE || secrets.SMTP_FALLBACK_SECURE || 'false' }}
           EMAIL_SMTP_FAMILY: ${{ secrets.EMAIL_SMTP_FAMILY || secrets.SMTP_FAMILY || '4' }}
           EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
           EMAIL_SMTP_PASS: ${{ secrets.EMAIL_SMTP_PASS || secrets.SMTP_PASS }}
@@ -117,6 +119,8 @@ jobs:
           EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
           EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT || '465' }}
           EMAIL_SMTP_SECURE: ${{ secrets.EMAIL_SMTP_SECURE || secrets.SMTP_SECURE }}
+          EMAIL_SMTP_FALLBACK_PORT: ${{ secrets.EMAIL_SMTP_FALLBACK_PORT || secrets.SMTP_FALLBACK_PORT || '587' }}
+          EMAIL_SMTP_FALLBACK_SECURE: ${{ secrets.EMAIL_SMTP_FALLBACK_SECURE || secrets.SMTP_FALLBACK_SECURE || 'false' }}
           EMAIL_SMTP_FAMILY: ${{ secrets.EMAIL_SMTP_FAMILY || secrets.SMTP_FAMILY || '4' }}
           EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
           EMAIL_SMTP_PASS: ${{ secrets.EMAIL_SMTP_PASS || secrets.SMTP_PASS }}
