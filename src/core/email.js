@@ -1,4 +1,6 @@
+import dns from "node:dns/promises";
 import fs from "node:fs";
+import net from "node:net";
 import nodemailer from "nodemailer";
 import { validateEmailConfig } from "../config.js";
 
@@ -44,6 +46,25 @@ export function formatEmailMessage(message) {
   return lines.join("\n");
 }
 
+async function getTransportHost(config) {
+  const host = config.emailSmtpHost;
+
+  if (config.emailSmtpFamily !== 4 || net.isIP(host)) {
+    return host;
+  }
+
+  const address = await dns.lookup(host, { family: 4 });
+  if (!address?.address) {
+    throw new Error(`No IPv4 address found for SMTP host: ${host}`);
+  }
+
+  return address.address;
+}
+
+function getTransportServername(config) {
+  return net.isIP(config.emailSmtpHost) ? undefined : config.emailSmtpHost;
+}
+
 export async function sendEmailMessage(
   config,
   text,
@@ -52,14 +73,17 @@ export async function sendEmailMessage(
 ) {
   validateEmailConfig(config);
 
+  const servername = getTransportServername(config);
   const transporter = nodemailer.createTransport({
-    host: config.emailSmtpHost,
+    host: await getTransportHost(config),
     port: config.emailSmtpPort,
     secure: config.emailSmtpSecure,
+    servername,
     auth: {
       user: config.emailSmtpUser,
       pass: config.emailSmtpPass,
     },
+    tls: servername ? { servername } : undefined,
     connectionTimeout: 30_000,
     greetingTimeout: 30_000,
     socketTimeout: 30_000,

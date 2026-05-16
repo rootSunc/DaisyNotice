@@ -54,6 +54,7 @@ NOTIFICATION_CHANNELS=telegram,email
 EMAIL_SMTP_HOST=smtp.example.com
 EMAIL_SMTP_PORT=465
 EMAIL_SMTP_SECURE=true
+EMAIL_SMTP_FAMILY=4
 EMAIL_SMTP_USER=notice@example.com
 EMAIL_SMTP_PASS=your-app-password
 EMAIL_FROM=notice@example.com

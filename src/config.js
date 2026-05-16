@@ -4,6 +4,21 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+function parseSmtpFamily(value, fallback) {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (["0", "auto", "any"].includes(normalized)) {
+    return 0;
+  }
+  if (normalized === "4") {
+    return 4;
+  }
+
+  return fallback;
+}
+
 function parsePositiveInteger(value, fallback) {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -64,6 +79,10 @@ export const config = {
   emailSmtpSecure: parseBoolean(
     process.env.EMAIL_SMTP_SECURE || process.env.SMTP_SECURE,
     emailSmtpPort === 465,
+  ),
+  emailSmtpFamily: parseSmtpFamily(
+    process.env.EMAIL_SMTP_FAMILY || process.env.SMTP_FAMILY,
+    4,
   ),
   emailSmtpUser: process.env.EMAIL_SMTP_USER || process.env.SMTP_USER || "",
   emailSmtpPass: process.env.EMAIL_SMTP_PASS || process.env.SMTP_PASS || "",
