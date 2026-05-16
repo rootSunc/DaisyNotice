@@ -197,13 +197,20 @@ function getChannelsToUse(config) {
     config.telegramBotToken && config.telegramChatId,
   );
   const hasWechatConfig = Boolean(config.wechatWebhookUrl);
-  const hasEmailConfig = Boolean(
+  const hasSmtpEmailConfig = Boolean(
     config.emailSmtpHost &&
       config.emailSmtpUser &&
       config.emailSmtpPass &&
       config.emailFrom &&
       config.emailTo?.length,
   );
+  const hasWebhookEmailConfig = Boolean(
+    config.emailWebhookUrl &&
+      config.emailWebhookToken &&
+      config.emailFrom &&
+      config.emailTo?.length,
+  );
+  const hasEmailConfig = hasSmtpEmailConfig || hasWebhookEmailConfig;
   const useTelegram =
     (channels.includes("telegram") || useBoth || useAll) && hasTelegramConfig;
   const useWechat =

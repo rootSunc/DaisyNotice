@@ -44,11 +44,25 @@ Supported values:
 
 - `telegram` — Telegram Bot
 - `wechat` — Enterprise WeChat webhook
-- `email` — SMTP email
+- `email` — Email via Google Apps Script webhook or SMTP
 - `both` — Telegram + WeChat
 - `all` — Telegram + WeChat + email
 
-Email delivery requires an SMTP sender account. Recipient mailboxes do not need passwords, and `EMAIL_TO` can contain multiple recipients:
+For GitHub Actions, prefer the HTTPS webhook path to avoid hosted runner SMTP port blocks. Sign in to Google Apps Script with the sender Gmail account, create a script, paste `docs/google-apps-script-email-webhook.gs`, replace `TOKEN` with a long random string, then deploy it as a Web App:
+
+- Execute as: `Me`
+- Who has access: `Anyone`
+
+Save the deployed Web App URL and the same token as GitHub Secrets:
+
+```env
+EMAIL_WEBHOOK_URL=https://script.google.com/macros/s/.../exec
+EMAIL_WEBHOOK_TOKEN=your-long-random-token
+EMAIL_FROM=notice@example.com
+EMAIL_TO=person1@example.com,person2@example.com
+```
+
+SMTP is also supported. Recipient mailboxes do not need passwords, and `EMAIL_TO` can contain multiple recipients:
 
 ```env
 EMAIL_SMTP_HOST=smtp.example.com

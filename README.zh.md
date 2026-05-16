@@ -44,11 +44,25 @@ NOTIFICATION_CHANNELS=telegram,email
 
 - `telegram` — Telegram Bot
 - `wechat` — 企业微信机器人 Webhook
-- `email` — SMTP 邮件
+- `email` — 邮件（Google Apps Script Webhook 或 SMTP）
 - `both` — Telegram + 企业微信
 - `all` — Telegram + 企业微信 + 邮件
 
-邮件推送需要配置 SMTP 发件账号。收件邮箱不需要密码，`EMAIL_TO` 可填写多个邮箱地址：
+在 GitHub Actions 上优先使用 HTTPS Webhook，避免托管 runner 阻塞 SMTP 端口。用 `noticechao@gmail.com` 登录 Google Apps Script，新建脚本，粘贴 `docs/google-apps-script-email-webhook.gs`，把 `TOKEN` 改成一段长随机字符串，然后部署为 Web App：
+
+- Execute as: `Me`
+- Who has access: `Anyone`
+
+把部署得到的 Web App URL 和同一段 token 保存到 GitHub Secrets：
+
+```env
+EMAIL_WEBHOOK_URL=https://script.google.com/macros/s/.../exec
+EMAIL_WEBHOOK_TOKEN=your-long-random-token
+EMAIL_FROM=notice@example.com
+EMAIL_TO=person1@example.com,person2@example.com
+```
+
+也可以使用 SMTP 发件账号。收件邮箱不需要密码，`EMAIL_TO` 可填写多个邮箱地址：
 
 ```env
 EMAIL_SMTP_HOST=smtp.example.com

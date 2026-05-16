@@ -1,6 +1,7 @@
 import dns from "node:dns/promises";
 import fs from "node:fs";
 import net from "node:net";
+import path from "node:path";
 import nodemailer from "nodemailer";
 import { validateEmailConfig } from "../config.js";
 
@@ -15,6 +16,23 @@ function getExistingAttachments(attachments) {
       return false;
     })
     .map((filePath) => ({ path: filePath }));
+}
+
+function getWebhookAttachments(attachments) {
+  return attachments
+    .filter((filePath) => {
+      if (fs.existsSync(filePath)) {
+        return true;
+      }
+
+      console.warn(`Email attachment does not exist. Skipping: ${filePath}`);
+      return false;
+    })
+    .map((filePath) => ({
+      filename: path.basename(filePath),
+      contentType: "application/octet-stream",
+      contentBase64: fs.readFileSync(filePath).toString("base64"),
+    }));
 }
 
 export function formatEmailSubject(message) {
@@ -63,6 +81,42 @@ async function getTransportHost(config) {
 
 function getTransportServername(config) {
   return net.isIP(config.emailSmtpHost) ? undefined : config.emailSmtpHost;
+}
+
+async function sendEmailViaWebhook(config, text, attachments, subject) {
+  const response = await fetch(config.emailWebhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      token: config.emailWebhookToken,
+      from: config.emailFrom,
+      to: config.emailTo,
+      subject,
+      text,
+      attachments: getWebhookAttachments(attachments),
+    }),
+  });
+
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`Email webhook failed: ${response.status} ${body}`);
+  }
+
+  if (body) {
+    try {
+      const data = JSON.parse(body);
+      if (data.ok === false) {
+        throw new Error(data.error || "Unknown email webhook error");
+      }
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return;
+      }
+      throw error;
+    }
+  }
 }
 
 async function sendEmailWithTransportConfig(config, text, attachments, subject) {
@@ -125,6 +179,11 @@ export async function sendEmailMessage(
   subject = "DaisyNotice Notification",
 ) {
   validateEmailConfig(config);
+
+  if (config.emailWebhookUrl) {
+    await sendEmailViaWebhook(config, text, attachments, subject);
+    return;
+  }
 
   try {
     await sendEmailWithTransportConfig(config, text, attachments, subject);

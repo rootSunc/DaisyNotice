@@ -78,6 +78,10 @@ export const config = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID || "",
   wechatWebhookUrl: process.env.WECHAT_WEBHOOK_URL || "",
+  emailWebhookUrl:
+    process.env.EMAIL_WEBHOOK_URL || process.env.MAIL_WEBHOOK_URL || "",
+  emailWebhookToken:
+    process.env.EMAIL_WEBHOOK_TOKEN || process.env.MAIL_WEBHOOK_TOKEN || "",
   emailSmtpHost: process.env.EMAIL_SMTP_HOST || process.env.SMTP_HOST || "",
   emailSmtpPort,
   emailSmtpSecure: parseBoolean(
@@ -143,9 +147,16 @@ export function validateWechatConfig(targetConfig = config) {
 export function validateEmailConfig(targetConfig = config) {
   const missing = [];
 
-  if (!targetConfig.emailSmtpHost) missing.push("EMAIL_SMTP_HOST");
-  if (!targetConfig.emailSmtpUser) missing.push("EMAIL_SMTP_USER");
-  if (!targetConfig.emailSmtpPass) missing.push("EMAIL_SMTP_PASS");
+  if (targetConfig.emailWebhookUrl && !targetConfig.emailWebhookToken) {
+    missing.push("EMAIL_WEBHOOK_TOKEN");
+  }
+
+  if (!targetConfig.emailWebhookUrl) {
+    if (!targetConfig.emailSmtpHost) missing.push("EMAIL_SMTP_HOST");
+    if (!targetConfig.emailSmtpUser) missing.push("EMAIL_SMTP_USER");
+    if (!targetConfig.emailSmtpPass) missing.push("EMAIL_SMTP_PASS");
+  }
+
   if (!targetConfig.emailFrom) missing.push("EMAIL_FROM");
   if (!targetConfig.emailTo?.length) missing.push("EMAIL_TO");
 
