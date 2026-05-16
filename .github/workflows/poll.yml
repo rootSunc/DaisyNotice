@@ -39,6 +39,20 @@ jobs:
       # Install dependencies
       - name: Install dependencies
         run: npm ci
+
+      # Fail early with clear diagnostics if selected notification channels are incomplete
+      - name: Check notification config
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
+          EMAIL_WEBHOOK_URL: ${{ secrets.EMAIL_WEBHOOK_URL || secrets.MAIL_WEBHOOK_URL }}
+          EMAIL_WEBHOOK_TOKEN: ${{ secrets.EMAIL_WEBHOOK_TOKEN || secrets.MAIL_WEBHOOK_TOKEN }}
+          EMAIL_PROVIDER: webhook
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO || secrets.MAIL_TO }}
+          NOTIFICATION_CHANNELS: ${{ secrets.NOTIFICATION_CHANNELS || 'telegram' }}
+        run: npm run check-notification-config
       
       # Get Playwright version for caching
       - name: Get Playwright version

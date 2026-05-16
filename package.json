@@ -11,6 +11,7 @@
   "type": "module",
   "scripts": {
     "auth": "node src/commands/auth.js",
+    "check-notification-config": "node src/commands/check-notification-config.js",
     "poll": "node src/commands/poll.js",
     "notify-test": "node src/commands/notify-test.js",
     "notify-all": "node src/commands/notify-all.js",
