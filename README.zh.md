@@ -94,6 +94,12 @@ EMAIL_TO=person1@example.com,person2@example.com
 - 消息按时间顺序排序（从旧到新）发送
 - 最适合：测试、重新通知特定消息、演示
 
+#### `npm run notify-test`
+- 运行 **一次** 后退出
+- 发送一条 DaisyNotice 测试通知，不登录 Pilke、不读取消息
+- 最适合：验证 Telegram、邮件等通知配置是否正确
+- 在 GitHub Actions 手动运行 `DaisyNotice Poll` 时，勾选 `send_test_notification` 可触发同样的测试
+
 #### `npm start`
 - **持续运行** 在后台
 - 每 `POLL_INTERVAL_HOURS` 小时自动执行一次检查（默认：8 小时）

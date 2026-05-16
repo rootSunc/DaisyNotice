@@ -12,6 +12,7 @@
   "scripts": {
     "auth": "node src/commands/auth.js",
     "poll": "node src/commands/poll.js",
+    "notify-test": "node src/commands/notify-test.js",
     "notify-all": "node src/commands/notify-all.js",
     "start": "node src/commands/loop.js"
   },

@@ -94,6 +94,12 @@ When running through GitHub Actions, save these values as repository GitHub Secr
 - Messages are sorted chronologically (oldest first) before sending
 - Best for: Testing, re-notifying specific messages, demos
 
+#### `npm run notify-test`
+- Runs **once** and exits
+- Sends a DaisyNotice test notification without logging in to Pilke or reading messages
+- Best for: Verifying Telegram, email, and other notification settings
+- In GitHub Actions, manually run `DaisyNotice Poll` and enable `send_test_notification` to trigger the same test
+
 #### `npm start`
 - Runs **continuously** in background
 - Auto-executes poll every `POLL_INTERVAL_HOURS` (default: 8 hours)

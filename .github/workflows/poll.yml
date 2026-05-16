@@ -7,6 +7,12 @@ on:
   
   # Allow manual trigger
   workflow_dispatch:
+    inputs:
+      send_test_notification:
+        description: "Send a test notification instead of polling"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   poll:
@@ -37,6 +43,7 @@ jobs:
       # Get Playwright version for caching
       - name: Get Playwright version
         id: playwright-version
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.send_test_notification != true }}
         run: |
           PLAYWRIGHT_VERSION=$(node -e "const pkg = JSON.parse(require('fs').readFileSync('package-lock.json')); console.log(pkg.packages['node_modules/playwright']?.version || pkg.dependencies['playwright']?.version || 'latest')")
           echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
@@ -44,6 +51,7 @@ jobs:
       # Cache Playwright browsers
       - name: Cache Playwright browsers
         id: playwright-cache
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.send_test_notification != true }}
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -53,12 +61,13 @@ jobs:
       
       # Install Playwright browsers (only if cache miss)
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_test_notification != true) && steps.playwright-cache.outputs.cache-hit != 'true' }}
         run: npx playwright install --with-deps chromium
       
       # Install Playwright dependencies (even if cache hit, some system deps might be needed)
       # Note: npx playwright install-deps chromium is fast if already installed
       - name: Install Playwright dependencies
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.send_test_notification != true }}
         run: npx playwright install-deps chromium
       
       # Configure Git (for automatic commits)
@@ -69,6 +78,7 @@ jobs:
       
       # Run polling
       - name: Run poll
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.send_test_notification != true }}
         env:
           # Environment variables read from GitHub Secrets
           PILKE_BASE_URL: ${{ secrets.PILKE_BASE_URL }}
@@ -96,9 +106,28 @@ jobs:
           NOTIFICATION_CHANNELS: ${{ secrets.NOTIFICATION_CHANNELS || 'telegram' }}
           DEBUG_CAPTURE: ${{ secrets.DEBUG_CAPTURE || '0' }}
         run: npm run poll
+
+      # Send a manual test notification without polling Daisy
+      - name: Send test notification
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test_notification == true }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
+          EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
+          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT || '465' }}
+          EMAIL_SMTP_SECURE: ${{ secrets.EMAIL_SMTP_SECURE || secrets.SMTP_SECURE }}
+          EMAIL_SMTP_FAMILY: ${{ secrets.EMAIL_SMTP_FAMILY || secrets.SMTP_FAMILY || '4' }}
+          EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_SMTP_PASS: ${{ secrets.EMAIL_SMTP_PASS || secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM || secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO || secrets.MAIL_TO }}
+          NOTIFICATION_CHANNELS: ${{ secrets.NOTIFICATION_CHANNELS || 'telegram' }}
+        run: npm run notify-test
       
       # Auto-commit polling data (only state.json, no login session required)
       - name: Auto-commit polling data
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.send_test_notification != true }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(data): update polling state [${{ github.run_number }}]"
