@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { validateTelegramConfig, validateWechatConfig } from "../config.js";
+import { validateTelegramConfig } from "../config.js";
 import {
-  sendWechatMessage,
-  formatWechatMessage,
-  sendWechatMarkdownMessage,
-} from "./wechat.js";
+  sendEmailMessage,
+  formatEmailMessage,
+  formatEmailSubject,
+} from "./email.js";
+import { sendWechatMessage, sendWechatMarkdownMessage } from "./wechat.js";
+
 function chunkText(text, size = 3500) {
   const chunks = [];
   let remaining = text;
@@ -68,7 +70,7 @@ export async function sendTelegramDocument(botToken, chatId, filePath) {
 }
 
 export async function sendTelegramMessage(config, text, attachments = []) {
-  validateTelegramConfig();
+  validateTelegramConfig(config);
 
   const parts = chunkText(text);
   for (const part of parts) {
@@ -119,16 +121,26 @@ export function formatTelegramMessage(message) {
 }
 
 /**
- * Send notification via all configured channels (Telegram and/or WeChat)
+ * Send notification via selected channels (Telegram, WeChat, and/or email)
  * @param {object} config - Configuration object
  * @param {string} text - Message text
  * @param {array} attachments - Optional file paths
  */
 export async function sendNotification(config, text, attachments = []) {
+  const { useTelegram, useWechat, useEmail } = getChannelsToUse(config);
+
+  if (!useTelegram && !useWechat && !useEmail) {
+    const configuredChannels = config.notificationChannels?.join(",") || "both";
+    throw new Error(
+      `No available notification channel for '${configuredChannels}'. ` +
+        "Ensure the selected channel secrets are configured.",
+    );
+  }
+
   const errors = [];
 
-  // Try Telegram if configured
-  if (config.telegramBotToken && config.telegramChatId) {
+  // Try Telegram if selected
+  if (useTelegram) {
     try {
       await sendTelegramMessage(config, text, attachments);
       console.log("✓ Message sent via Telegram");
@@ -138,8 +150,8 @@ export async function sendNotification(config, text, attachments = []) {
     }
   }
 
-  // Try WeChat if configured
-  if (config.wechatWebhookUrl) {
+  // Try WeChat if selected
+  if (useWechat) {
     try {
       await sendWechatMessage(config, text, attachments);
       console.log("✓ Message sent via WeChat");
@@ -149,18 +161,22 @@ export async function sendNotification(config, text, attachments = []) {
     }
   }
 
-  // If no notification channel is configured
-  if (!config.telegramBotToken && !config.wechatWebhookUrl) {
-    throw new Error(
-      "No notification channel configured. Set TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID or WECHAT_WEBHOOK_URL in .env",
-    );
+  // Try email if selected
+  if (useEmail) {
+    try {
+      await sendEmailMessage(config, text, attachments);
+      console.log("✓ Message sent via email");
+    } catch (err) {
+      console.error("✗ Email notification failed:", err.message);
+      errors.push(`Email: ${err.message}`);
+    }
   }
 
   // If all channels failed
   if (
     errors.length > 0 &&
     errors.length ===
-      (config.telegramBotToken ? 1 : 0) + (config.wechatWebhookUrl ? 1 : 0)
+      (useTelegram ? 1 : 0) + (useWechat ? 1 : 0) + (useEmail ? 1 : 0)
   ) {
     throw new Error(`All notification channels failed:\n${errors.join("\n")}`);
   }
@@ -169,19 +185,33 @@ export async function sendNotification(config, text, attachments = []) {
 /**
  * Determine which channels to use based on configuration
  * @param {object} config - Configuration object
- * @returns {object} Object with telegram and wechat boolean flags
+ * @returns {object} Object with telegram, wechat, and email boolean flags
  */
 function getChannelsToUse(config) {
-  const channels = config.notificationChannels || ["both"];
+  const channels = config.notificationChannels?.length
+    ? config.notificationChannels
+    : ["both"];
+  const useAll = channels.includes("all");
+  const useBoth = channels.includes("both");
+  const hasTelegramConfig = Boolean(
+    config.telegramBotToken && config.telegramChatId,
+  );
+  const hasWechatConfig = Boolean(config.wechatWebhookUrl);
+  const hasEmailConfig = Boolean(
+    config.emailSmtpHost &&
+      config.emailSmtpUser &&
+      config.emailSmtpPass &&
+      config.emailFrom &&
+      config.emailTo?.length,
+  );
   const useTelegram =
-    (channels.includes("telegram") || channels.includes("both")) &&
-    config.telegramBotToken &&
-    config.telegramChatId;
+    (channels.includes("telegram") || useBoth || useAll) && hasTelegramConfig;
   const useWechat =
-    (channels.includes("wechat") || channels.includes("both")) &&
-    config.wechatWebhookUrl;
+    (channels.includes("wechat") || useBoth || useAll) && hasWechatConfig;
+  const useEmail =
+    (channels.includes("email") || useAll) && hasEmailConfig;
 
-  return { useTelegram, useWechat };
+  return { useTelegram, useWechat, useEmail };
 }
 
 /**
@@ -195,19 +225,20 @@ export async function sendFormattedNotification(
   message,
   attachments = [],
 ) {
-  const { useTelegram, useWechat } = getChannelsToUse(config);
+  const { useTelegram, useWechat, useEmail } = getChannelsToUse(config);
 
   // Check if at least one channel is available
-  if (!useTelegram && !useWechat) {
+  if (!useTelegram && !useWechat && !useEmail) {
     const configuredChannels = config.notificationChannels?.join(",") || "both";
     throw new Error(
       `No available notification channel for '${configuredChannels}'. ` +
-        `Ensure TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID or WECHAT_WEBHOOK_URL are set in .env`,
+        "Ensure the selected channel secrets are configured.",
     );
   }
 
   const telegramText = useTelegram ? formatTelegramMessage(message) : "";
-  const wechatText = useWechat ? formatWechatMessage(message) : "";
+  const emailText = useEmail ? formatEmailMessage(message) : "";
+  const emailSubject = useEmail ? formatEmailSubject(message) : "";
 
   const errors = [];
 
@@ -235,10 +266,22 @@ export async function sendFormattedNotification(
     }
   }
 
+  // Send via email if selected
+  if (useEmail) {
+    try {
+      await sendEmailMessage(config, emailText, attachments, emailSubject);
+      console.log("✓ Message sent via email");
+    } catch (err) {
+      console.error("✗ Email notification failed:", err.message);
+      errors.push(`Email: ${err.message}`);
+    }
+  }
+
   // If all channels failed
   if (
     errors.length > 0 &&
-    errors.length === (useTelegram ? 1 : 0) + (useWechat ? 1 : 0)
+    errors.length ===
+      (useTelegram ? 1 : 0) + (useWechat ? 1 : 0) + (useEmail ? 1 : 0)
   ) {
     throw new Error(`All notification channels failed:\n${errors.join("\n")}`);
   }

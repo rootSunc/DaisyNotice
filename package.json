@@ -1,7 +1,7 @@
 {
   "name": "daisy-notice",
   "version": "0.1.0",
-  "description": "Pilke DaisyFamily message polling and Telegram notification tool",
+  "description": "Pilke DaisyFamily message polling and multi-channel notification tool",
   "author": "Chao Sun",
   "license": "MIT",
   "repository": {
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
+    "nodemailer": "^8.0.7",
     "playwright": "^1.54.2"
   }
 }

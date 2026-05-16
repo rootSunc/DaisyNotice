@@ -78,6 +78,13 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           WECHAT_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK_URL }}
+          EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST || secrets.SMTP_HOST }}
+          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT || secrets.SMTP_PORT || '465' }}
+          EMAIL_SMTP_SECURE: ${{ secrets.EMAIL_SMTP_SECURE || secrets.SMTP_SECURE }}
+          EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_SMTP_PASS: ${{ secrets.EMAIL_SMTP_PASS || secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM || secrets.MAIL_FROM || secrets.EMAIL_SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO || secrets.MAIL_TO }}
           POLL_INTERVAL_HOURS: ${{ secrets.POLL_INTERVAL_HOURS || '24' }}
           INITIAL_SYNC_MODE: ${{ secrets.INITIAL_SYNC_MODE || 'mark-seen' }}
           MESSAGE_ROW_SELECTOR: ${{ secrets.MESSAGE_ROW_SELECTOR }}

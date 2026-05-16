@@ -8,7 +8,7 @@
 
 ## 项目介绍
 
-DaisyNotice 是一个轻量级 Node.js 后台服务，自动监控你在 Pilke DaisyFamily 的消息收件箱，并实时推送新消息到 Telegram 或企业微信。
+DaisyNotice 是一个轻量级 Node.js 后台服务，自动监控你在 Pilke DaisyFamily 的消息收件箱，并实时推送新消息到 Telegram、企业微信或邮箱。
 
 **痛点解决：** Pilke DaisyFamily 平台缺乏实时通知能力且无法通知多个用户，容易遗漏重要消息。DaisyNotice 帮你和家人及时获取最新消息。
 
@@ -18,7 +18,7 @@ DaisyNotice 是一个轻量级 Node.js 后台服务，自动监控你在 Pilke D
 
 - ✅ **自动化监控** — 通过 Playwright 浏览器自动化定期轮询
 - ✅ **无重复通知** — 本地 JSON 记录已读消息，智能去重
-- ✅ **多渠道推送** — 同时支持 Telegram 和企业微信
+- ✅ **多渠道推送** — 同时支持 Telegram、企业微信和邮件
 - ✅ **无需云服务** — 零依赖，本地运行，数据完全掌控
 - ✅ **高度可定制** — 支持自定义 CSS 选择器、轮询间隔等
 - ✅ **智能去重** — 基于时间戳的消息追踪机制
@@ -27,8 +27,40 @@ DaisyNotice 是一个轻量级 Node.js 后台服务，自动监控你在 Pilke D
 
 ## 前置要求
 
-- Node.js 20+
+- Node.js 24+
 - npm 或 yarn
+
+---
+
+## 通知配置
+
+通过 `NOTIFICATION_CHANNELS` 选择推送渠道，多个渠道用英文逗号分隔：
+
+```env
+NOTIFICATION_CHANNELS=telegram,email
+```
+
+支持的值：
+
+- `telegram` — Telegram Bot
+- `wechat` — 企业微信机器人 Webhook
+- `email` — SMTP 邮件
+- `both` — Telegram + 企业微信
+- `all` — Telegram + 企业微信 + 邮件
+
+邮件推送需要配置 SMTP 发件账号。收件邮箱不需要密码，`EMAIL_TO` 可填写多个邮箱地址：
+
+```env
+EMAIL_SMTP_HOST=smtp.example.com
+EMAIL_SMTP_PORT=465
+EMAIL_SMTP_SECURE=true
+EMAIL_SMTP_USER=notice@example.com
+EMAIL_SMTP_PASS=your-app-password
+EMAIL_FROM=notice@example.com
+EMAIL_TO=person1@example.com,person2@example.com
+```
+
+如果在 GitHub Actions 中运行，把以上变量保存到仓库的 GitHub Secrets 即可。
 
 ---
 

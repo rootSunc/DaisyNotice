@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-DaisyNotice is a lightweight Node.js background service that automatically monitors your Pilke DaisyFamily message inbox and pushes new messages to Telegram or WeChat in real-time.
+DaisyNotice is a lightweight Node.js background service that automatically monitors your Pilke DaisyFamily message inbox and pushes new messages to Telegram, WeChat, or email in real-time.
 
 **Problem Solved:** The Pilke DaisyFamily platform lacks real-time notification capabilities and cannot notify multiple users, making it easy to miss important messages. DaisyNotice helps you and your family get the latest messages in a timely manner.
 
@@ -18,7 +18,7 @@ DaisyNotice is a lightweight Node.js background service that automatically monit
 
 - ✅ **Automated Monitoring** — Periodic polling via Playwright browser automation
 - ✅ **No Duplicate Notifications** — Local JSON records read messages for intelligent deduplication
-- ✅ **Multi-Channel Delivery** — Simultaneous support for Telegram and WeChat
+- ✅ **Multi-Channel Delivery** — Simultaneous support for Telegram, WeChat, and email
 - ✅ **Zero Cloud Dependencies** — No external services, local execution, full data control
 - ✅ **Highly Customizable** — Custom CSS selectors, configurable polling intervals, and more
 - ✅ **Time-Based Deduplication** — Smart timestamp-based message tracking
@@ -27,8 +27,40 @@ DaisyNotice is a lightweight Node.js background service that automatically monit
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - npm or yarn
+
+---
+
+## Notification Configuration
+
+Use `NOTIFICATION_CHANNELS` to select delivery channels. Separate multiple channels with commas:
+
+```env
+NOTIFICATION_CHANNELS=telegram,email
+```
+
+Supported values:
+
+- `telegram` — Telegram Bot
+- `wechat` — Enterprise WeChat webhook
+- `email` — SMTP email
+- `both` — Telegram + WeChat
+- `all` — Telegram + WeChat + email
+
+Email delivery requires an SMTP sender account. Recipient mailboxes do not need passwords, and `EMAIL_TO` can contain multiple recipients:
+
+```env
+EMAIL_SMTP_HOST=smtp.example.com
+EMAIL_SMTP_PORT=465
+EMAIL_SMTP_SECURE=true
+EMAIL_SMTP_USER=notice@example.com
+EMAIL_SMTP_PASS=your-app-password
+EMAIL_FROM=notice@example.com
+EMAIL_TO=person1@example.com,person2@example.com
+```
+
+When running through GitHub Actions, save these values as repository GitHub Secrets.
 
 ---
 

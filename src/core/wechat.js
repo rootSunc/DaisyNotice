@@ -89,7 +89,7 @@ async function sendWechatMarkdown(webhookUrl, markdown) {
  * @param {array} attachments - Optional file paths (not supported by WeChat webhook)
  */
 export async function sendWechatMessage(config, text, attachments = []) {
-  validateWechatConfig();
+  validateWechatConfig(config);
 
   const parts = chunkText(text);
   for (const part of parts) {
@@ -109,7 +109,7 @@ export async function sendWechatMessage(config, text, attachments = []) {
  * @param {string} markdown - Markdown formatted text
  */
 export async function sendWechatMarkdownMessage(config, markdown) {
-  validateWechatConfig();
+  validateWechatConfig(config);
 
   // For markdown, we don't chunk as it's typically shorter
   // But if needed, split by logical sections
