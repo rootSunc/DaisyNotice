@@ -1,59 +1,124 @@
 # DaisyNotice
 
-> 🔔 Pilke 消息监控与多渠道通知工具
+> 再也不用担心错过 Pilke DaisyFamily 消息。
 
-**[English Version](README.md)** 
+**[English](README.md)**
 
----
+DaisyNotice 会监控你的 Pilke 收件箱，把新消息推送到 **Telegram**、**企业微信** 或 **邮箱**，并自带 **芬兰语 → 英语** 翻译。
 
-## 项目介绍
-
-DaisyNotice 是一个轻量级 Node.js 后台服务，自动监控你在 Pilke DaisyFamily 的消息收件箱，并实时推送新消息到 Telegram、企业微信或邮箱。
-
-**痛点解决：** Pilke DaisyFamily 平台缺乏实时通知能力且无法通知多个用户，容易遗漏重要消息。DaisyNotice 帮你和家人及时获取最新消息。
+Pilke 没有实时推送，也无法通知多个家庭成员。DaisyNotice 就是为解决这个痛点而生。
 
 ---
 
-## 核心特性
+## 功能特性
 
-- ✅ **自动化监控** — 通过 Playwright 浏览器自动化定期轮询
-- ✅ **无重复通知** — 本地 JSON 记录已读消息，智能去重
-- ✅ **多渠道推送** — 同时支持 Telegram、企业微信和邮件
-- ✅ **无需云服务** — 零依赖，本地运行，数据完全掌控
-- ✅ **高度可定制** — 支持自定义 CSS 选择器、轮询间隔等
-- ✅ **智能去重** — 基于时间戳的消息追踪机制
-
----
-
-## 前置要求
-
-- Node.js 24+
-- npm 或 yarn
+- 🔄 **自动轮询** — Playwright 登录并按计划检查新消息
+- 🧠 **智能去重** — 基于时间戳追踪，同一条消息不会反复轰炸
+- 📢 **多渠道推送** — Telegram / 企业微信 / 邮件，可任意组合
+- 🇬🇧 **芬兰语 → 英语** — 纯芬兰语消息自动附带英文翻译
+- 📎 **附件转发** — 有附件时自动下载并一并推送
+- ☁️ **无需自己的服务器** — 免费跑在 GitHub Actions，或本地 Node.js 20+
 
 ---
 
-## 通知配置
+## 最快上手（推荐）：GitHub Actions
 
-通过 `NOTIFICATION_CHANNELS` 选择推送渠道，多个渠道用英文逗号分隔：
+不用买服务器，不用装 Docker。Fork 一次，配好 Secrets 即可。
+
+### 1. Fork 本仓库
+
+点右上角 **Fork** 到你的 GitHub 账号。
+
+### 2. 开启 Actions
+
+进入你的 Fork：**Settings → Actions → General → Allow all actions**。
+
+如有提示，再到 **Actions** 页启用工作流。
+
+### 3. 添加仓库 Secrets
+
+**Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret | 是否必需 | 说明 |
+|--------|----------|------|
+| `PILKE_USERNAME` | ✅ | Pilke 登录用户名 |
+| `PILKE_PASSWORD` | ✅ | Pilke 登录密码 |
+| `NOTIFICATION_CHANNELS` | ✅ | 例如 `telegram`、`email`、`telegram,email` 或 `all` |
+| `TELEGRAM_BOT_TOKEN` | 使用 Telegram 时 | 向 [@BotFather](https://t.me/BotFather) 申请 |
+| `TELEGRAM_CHAT_ID` | 使用 Telegram 时 | 你的聊天 / 群组 ID |
+| `WECHAT_WEBHOOK_URL` | 使用企业微信时 | 企业微信机器人 Webhook |
+| `EMAIL_WEBHOOK_URL` | Actions 上用邮件时 | Google Apps Script Web App URL |
+| `EMAIL_WEBHOOK_TOKEN` | Actions 上用邮件时 | 与 GAS 脚本中的 TOKEN 一致 |
+| `EMAIL_FROM` | 使用邮件时 | 发件地址 |
+| `EMAIL_TO` | 使用邮件时 | 收件人，逗号分隔 |
+
+> 在 GitHub Actions 上优先用邮件 **Webhook**。托管 Runner 经常会拦截 SMTP 端口。
+
+### 4. 测试并启用
+
+1. **Actions → DaisyNotice Poll → Run workflow**
+2. 勾选 `send_test_notification`，验证 Telegram / 邮件 / 企业微信是否通
+3. 再跑一次正式轮询（不要勾选测试）  
+   （首次运行会把现有消息标为已读，并发送一条初始化成功通知）
+4. 之后按 `.github/workflows/poll.yml` 中的定时任务自动执行（默认每天 12:00 UTC）
+
+---
+
+## 备选：本地运行
+
+```bash
+git clone https://github.com/rootSunc/daisy-notice.git
+cd daisy-notice
+npm install
+npx playwright install chromium
+cp .env.example .env
+```
+
+至少在 `.env` 里填好：
+
+```env
+PILKE_USERNAME=your-username
+PILKE_PASSWORD=your-password
+NOTIFICATION_CHANNELS=telegram
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+```
+
+然后：
+
+```bash
+npm run notify-test   # 验证通知渠道
+npm run poll          # 检查一次
+npm start             # 持续轮询（默认每 8 小时）
+```
+
+如果自动登录失败，可在有图形界面的环境跑一次 `npm run auth`，再重试。
+
+**需要 Node.js 20+。**
+
+---
+
+## 通知渠道
 
 ```env
 NOTIFICATION_CHANNELS=telegram,email
 ```
 
-支持的值：
+| 值 | 渠道 |
+|----|------|
+| `telegram` | Telegram Bot |
+| `wechat` | 企业微信 Webhook |
+| `email` | 邮件（Webhook 或 SMTP） |
+| `both` | Telegram + 企业微信 |
+| `all` | Telegram + 企业微信 + 邮件 |
 
-- `telegram` — Telegram Bot
-- `wechat` — 企业微信机器人 Webhook
-- `email` — 邮件（Google Apps Script Webhook 或 SMTP）
-- `both` — Telegram + 企业微信
-- `all` — Telegram + 企业微信 + 邮件
+### GitHub Actions 上的邮件（Webhook）
 
-在 GitHub Actions 上优先使用 HTTPS Webhook，避免托管 runner 阻塞 SMTP 端口。用 `noticechao@gmail.com` 登录 Google Apps Script，新建脚本，粘贴 `docs/google-apps-script-email-webhook.gs`，把 `TOKEN` 改成一段长随机字符串，然后部署为 Web App：
-
-- Execute as: `Me`
-- Who has access: `Anyone`
-
-把部署得到的 Web App URL 和同一段 token 保存到 GitHub Secrets：
+1. 用发件人的 Gmail 登录 [Google Apps Script](https://script.google.com)
+2. 粘贴 `docs/google-apps-script-email-webhook.gs`
+3. 把 `TOKEN` 换成一段长随机字符串
+4. 部署为 Web App：**Execute as: Me**，**Who has access: Anyone**
+5. 把 Web App URL 和 token 存进 Secrets：
 
 ```env
 EMAIL_WEBHOOK_URL=https://script.google.com/macros/s/.../exec
@@ -62,74 +127,66 @@ EMAIL_FROM=notice@example.com
 EMAIL_TO=person1@example.com,person2@example.com
 ```
 
-也可以使用 SMTP 发件账号。收件邮箱不需要密码，`EMAIL_TO` 可填写多个邮箱地址：
+### SMTP 邮件（本地 / 自建）
 
 ```env
 EMAIL_SMTP_HOST=smtp.example.com
 EMAIL_SMTP_PORT=465
 EMAIL_SMTP_SECURE=true
-EMAIL_SMTP_FALLBACK_PORT=587
-EMAIL_SMTP_FALLBACK_SECURE=false
-EMAIL_SMTP_FAMILY=4
 EMAIL_SMTP_USER=notice@example.com
 EMAIL_SMTP_PASS=your-app-password
 EMAIL_FROM=notice@example.com
 EMAIL_TO=person1@example.com,person2@example.com
 ```
 
-如果在 GitHub Actions 中运行，把以上变量保存到仓库的 GitHub Secrets 即可。
+---
+
+## 芬兰语 → 英语翻译
+
+当消息看起来是纯芬兰语时，DaisyNotice 会在推送前给标题和正文附上英文翻译。
+
+- 芬兰语 / 英语混排的消息不会翻译
+- 使用 Google 公开翻译接口（非官方，可能限流或变更）
+- 无需 API Key
+- 翻译失败不影响推送 —— 你仍会收到原始芬兰语内容
 
 ---
 
-## 命令指南
+## 命令一览
 
-| 命令 | 执行方式 | 用途 | 使用场景 |
-|------|----------|------|---------|
-| `npm run auth` | 一次性 | 浏览器登录 Pilke 并保存会话 | 首次设置、会话过期 |
-| `npm run poll` | 一次性 | 检查一次新消息 | 手动测试、开发调试、临时查询 |
-| `npm run notify-all [N]` | 一次性 | 重新推送消息（最新 N 条或全部） | 重新通知特定消息、测试 |
-| `npm start` | 持续运行 | 自动监控并定时推送消息 | 生产环境、24/7 监控 |
+| 命令 | 作用 |
+|------|------|
+| `npm run notify-test` | 发送测试通知（不登录 Pilke） |
+| `npm run poll` | 检查一次新消息 |
+| `npm start` | 按 `POLL_INTERVAL_HOURS` 持续轮询（默认 8 小时） |
+| `npm run notify-all [N]` | 重新推送最近 N 条（或不带参数推送全部） |
+| `npm run auth` | 交互式浏览器登录，保存 `data/session.json` |
+| `npm run check-notification-config` | 校验已选通知渠道的环境变量 |
 
-### 命令详情
+**首次 `poll` / Actions 运行：** 会把当前收件箱标为已读，并发送初始化确认。之后只通知更新的消息。
 
-#### `npm run auth`
-- **首次使用** — 登录 Pilke 并保存会话
-- 将会话保存到 `data/session.json` 供后续使用
-- 仅在会话过期时重新运行
+---
 
-#### `npm run poll`
-- 运行 **一次** 后退出
-- **首次运行**：标记所有现有消息为已读（不发送通知）
-- **后续运行**：仅推送新消息
-- 最适合：测试、调试、手动检查
+## 可选配置
 
-#### `npm run notify-all [N]`
-- 运行 **一次** 后退出
-- `npm run notify-all 5` — 重新推送最后 5 条消息（从旧到新）
-- `npm run notify-all` — 重新推送所有消息
-- 消息按时间顺序排序（从旧到新）发送
-- 最适合：测试、重新通知特定消息、演示
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `POLL_INTERVAL_HOURS` | `8` | 本地 `npm start` 的轮询间隔 |
+| `INITIAL_SYNC_MODE` | `mark-seen` | 首次运行：标记现有消息为已读 |
+| `MESSAGES_URL` | 空 | 自动导航失败时填写收件箱直达 URL |
+| `DEBUG_CAPTURE` | `0` | 设为 `1` 时在 `data/debug/` 保存 HTML / 截图 |
+| `MESSAGE_*_SELECTOR` | 空 | Pilke 页面改版时可覆盖 CSS 选择器 |
 
-#### `npm run notify-test`
-- 运行 **一次** 后退出
-- 发送一条 DaisyNotice 测试通知，不登录 Pilke、不读取消息
-- 最适合：验证 Telegram、邮件等通知配置是否正确
-- 在 GitHub Actions 手动运行 `DaisyNotice Poll` 时，勾选 `send_test_notification` 可触发同样的测试
-
-#### `npm start`
-- **持续运行** 在后台
-- 每 `POLL_INTERVAL_HOURS` 小时自动执行一次检查（默认：8 小时）
-- 按 Ctrl+C 停止
-- 最适合：生产环境、24/7 监控
+完整列表见 [`.env.example`](.env.example)。
 
 ---
 
 ## 免责声明
 
-本项目仅供个人学习与技术研究使用。使用本项目脚本访问 Pilke 平台可能违反其服务条款。作者不对因使用此工具导致的不良后果负责：**使用前请仔细阅读相关服务条款，所有风险由用户自行承担。**
+本项目仅供个人学习与技术研究。使用自动化方式访问 Pilke 可能违反其服务条款。**所有风险由使用者自行承担。**
 
 ---
 
 ## 许可证
 
-MIT [LICENSE](LICENSE)
+[MIT](LICENSE)

@@ -1,59 +1,124 @@
 # DaisyNotice
 
-> 🔔 Pilke Message Monitoring & Multi-Channel Notification Tool
+> Never miss a Pilke DaisyFamily message again.
 
 **[中文文档](README.zh.md)**
 
----
+DaisyNotice watches your Pilke inbox and pushes new messages to **Telegram**, **WeChat Work**, or **email** — with Finnish → English translation built in.
 
-## Project Overview
-
-DaisyNotice is a lightweight Node.js background service that automatically monitors your Pilke DaisyFamily message inbox and pushes new messages to Telegram, WeChat, or email in real-time.
-
-**Problem Solved:** The Pilke DaisyFamily platform lacks real-time notification capabilities and cannot notify multiple users, making it easy to miss important messages. DaisyNotice helps you and your family get the latest messages in a timely manner.
+Pilke has no real-time push and no multi-user alerts. DaisyNotice fills that gap for you and your family.
 
 ---
 
-## Core Features
+## Features
 
-- ✅ **Automated Monitoring** — Periodic polling via Playwright browser automation
-- ✅ **No Duplicate Notifications** — Local JSON records read messages for intelligent deduplication
-- ✅ **Multi-Channel Delivery** — Simultaneous support for Telegram, WeChat, and email
-- ✅ **Zero Cloud Dependencies** — No external services, local execution, full data control
-- ✅ **Highly Customizable** — Custom CSS selectors, configurable polling intervals, and more
-- ✅ **Time-Based Deduplication** — Smart timestamp-based message tracking
-
----
-
-## Prerequisites
-
-- Node.js 24+
-- npm or yarn
+- 🔄 **Auto polling** — Playwright logs in and checks for new messages on a schedule
+- 🧠 **Smart dedupe** — timestamp-based tracking, no spam from the same message
+- 📢 **Multi-channel** — Telegram / WeChat Work / email, pick any combination
+- 🇬🇧 **Finnish → English** — Finnish-only messages are translated automatically
+- 📎 **Attachments** — downloads and forwards files when available
+- ☁️ **Zero server needed** — run on GitHub Actions for free, or locally on Node.js 20+
 
 ---
 
-## Notification Configuration
+## Quick Start (recommended): GitHub Actions
 
-Use `NOTIFICATION_CHANNELS` to select delivery channels. Separate multiple channels with commas:
+No VPS. No Docker. Fork once, add secrets, done.
+
+### 1. Fork this repo
+
+Fork → your GitHub account.
+
+### 2. Enable Actions
+
+In your fork: **Settings → Actions → General → Allow all actions**.
+
+Then open **Actions** and enable workflows if GitHub asks.
+
+### 3. Add repository secrets
+
+**Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `PILKE_USERNAME` | ✅ | Pilke login username |
+| `PILKE_PASSWORD` | ✅ | Pilke login password |
+| `NOTIFICATION_CHANNELS` | ✅ | e.g. `telegram`, `email`, `telegram,email`, or `all` |
+| `TELEGRAM_BOT_TOKEN` | if using Telegram | From [@BotFather](https://t.me/BotFather) |
+| `TELEGRAM_CHAT_ID` | if using Telegram | Your chat / group id |
+| `WECHAT_WEBHOOK_URL` | if using WeChat | WeChat Work bot webhook |
+| `EMAIL_WEBHOOK_URL` | if using email on Actions | Google Apps Script Web App URL |
+| `EMAIL_WEBHOOK_TOKEN` | if using email on Actions | Same token as in the GAS script |
+| `EMAIL_FROM` | if using email | From address |
+| `EMAIL_TO` | if using email | Recipients, comma-separated |
+
+> On GitHub Actions, prefer the email **webhook** path. Hosted runners often block SMTP ports.
+
+### 4. Test & go live
+
+1. **Actions → DaisyNotice Poll → Run workflow**
+2. Enable `send_test_notification` to verify Telegram / email / WeChat
+3. Run again without the test flag to do the first real poll  
+   (first run marks existing messages as seen and sends a setup confirmation)
+4. After that, the workflow runs on the schedule in `.github/workflows/poll.yml` (default: daily at 12:00 UTC)
+
+---
+
+## Alternative: run locally
+
+```bash
+git clone https://github.com/rootSunc/daisy-notice.git
+cd daisy-notice
+npm install
+npx playwright install chromium
+cp .env.example .env
+```
+
+Edit `.env` with at least:
+
+```env
+PILKE_USERNAME=your-username
+PILKE_PASSWORD=your-password
+NOTIFICATION_CHANNELS=telegram
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+```
+
+Then:
+
+```bash
+npm run notify-test   # verify notification channels
+npm run poll          # one-shot check
+npm start             # keep polling (default every 8 hours)
+```
+
+If auto-login fails, run `npm run auth` once in a visible browser, then retry.
+
+**Requires Node.js 20+.**
+
+---
+
+## Notification channels
 
 ```env
 NOTIFICATION_CHANNELS=telegram,email
 ```
 
-Supported values:
+| Value | Channels |
+|-------|----------|
+| `telegram` | Telegram Bot |
+| `wechat` | WeChat Work webhook |
+| `email` | Email (webhook or SMTP) |
+| `both` | Telegram + WeChat |
+| `all` | Telegram + WeChat + email |
 
-- `telegram` — Telegram Bot
-- `wechat` — Enterprise WeChat webhook
-- `email` — Email via Google Apps Script webhook or SMTP
-- `both` — Telegram + WeChat
-- `all` — Telegram + WeChat + email
+### Email on GitHub Actions (webhook)
 
-For GitHub Actions, prefer the HTTPS webhook path to avoid hosted runner SMTP port blocks. Sign in to Google Apps Script with the sender Gmail account, create a script, paste `docs/google-apps-script-email-webhook.gs`, replace `TOKEN` with a long random string, then deploy it as a Web App:
-
-- Execute as: `Me`
-- Who has access: `Anyone`
-
-Save the deployed Web App URL and the same token as GitHub Secrets:
+1. Sign in to [Google Apps Script](https://script.google.com) with the sender Gmail account
+2. Paste `docs/google-apps-script-email-webhook.gs`
+3. Replace `TOKEN` with a long random string
+4. Deploy as Web App: **Execute as: Me**, **Who has access: Anyone**
+5. Save the Web App URL + token as secrets:
 
 ```env
 EMAIL_WEBHOOK_URL=https://script.google.com/macros/s/.../exec
@@ -62,74 +127,66 @@ EMAIL_FROM=notice@example.com
 EMAIL_TO=person1@example.com,person2@example.com
 ```
 
-SMTP is also supported. Recipient mailboxes do not need passwords, and `EMAIL_TO` can contain multiple recipients:
+### Email via SMTP (local / self-hosted)
 
 ```env
 EMAIL_SMTP_HOST=smtp.example.com
 EMAIL_SMTP_PORT=465
 EMAIL_SMTP_SECURE=true
-EMAIL_SMTP_FALLBACK_PORT=587
-EMAIL_SMTP_FALLBACK_SECURE=false
-EMAIL_SMTP_FAMILY=4
 EMAIL_SMTP_USER=notice@example.com
 EMAIL_SMTP_PASS=your-app-password
 EMAIL_FROM=notice@example.com
 EMAIL_TO=person1@example.com,person2@example.com
 ```
 
-When running through GitHub Actions, save these values as repository GitHub Secrets.
+---
+
+## Finnish → English translation
+
+When a message looks Finnish-only, DaisyNotice appends an English translation to the title and body before sending the notification.
+
+- Mixed Finnish / English messages are left as-is
+- Uses Google’s public translate endpoint (unofficial; may rate-limit or change)
+- No API key required
+- Failures are non-fatal — you still get the original Finnish text
 
 ---
 
-## Commands Guide
+## Commands
 
-| Command | Execution | Purpose | Use Case |
-|---------|-----------|---------|----------|
-| `npm run auth` | One-time | Browser login to Pilke & save session | First-time setup, session expired |
-| `npm run poll` | One-time | Check for new messages once | Manual testing, development, ad-hoc checking |
-| `npm run notify-all [N]` | One-time | Resend messages (latest N or all) | Re-notify specific messages, testing |
-| `npm start` | Continuous | Auto-monitor & notify on interval | Production use, 24/7 monitoring |
+| Command | What it does |
+|---------|----------------|
+| `npm run notify-test` | Send a test notification (no Pilke login) |
+| `npm run poll` | Check once for new messages |
+| `npm start` | Poll forever on `POLL_INTERVAL_HOURS` (default 8) |
+| `npm run notify-all [N]` | Resend latest N messages (or all) |
+| `npm run auth` | Interactive browser login, save `data/session.json` |
+| `npm run check-notification-config` | Validate selected channel env vars |
 
-### Command Details
+**First `poll` / Actions run:** marks current inbox as seen and sends a setup confirmation. Later runs only notify on newer messages.
 
-#### `npm run auth`
-- **First use only** — logs into Pilke and saves session
-- Stores session to `data/session.json` for reuse
-- Re-run only if session expires
+---
 
-#### `npm run poll`
-- Runs **once** and exits
-- **First run:** Marks all existing messages as seen (no notifications)
-- **Later runs:** Pushes only new messages
-- Best for: Testing, debugging, manual checks
+## Optional config
 
-#### `npm run notify-all [N]`
-- Runs **once** and exits
-- `npm run notify-all 5` — resend the last 5 messages (oldest→newest order)
-- `npm run notify-all` — resend all messages
-- Messages are sorted chronologically (oldest first) before sending
-- Best for: Testing, re-notifying specific messages, demos
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `POLL_INTERVAL_HOURS` | `8` | Local `npm start` interval |
+| `INITIAL_SYNC_MODE` | `mark-seen` | First run: mark existing as seen |
+| `MESSAGES_URL` | empty | Direct inbox URL if auto-nav fails |
+| `DEBUG_CAPTURE` | `0` | Set `1` to save HTML/screenshots under `data/debug/` |
+| `MESSAGE_*_SELECTOR` | empty | Override CSS selectors if Pilke UI changes |
 
-#### `npm run notify-test`
-- Runs **once** and exits
-- Sends a DaisyNotice test notification without logging in to Pilke or reading messages
-- Best for: Verifying Telegram, email, and other notification settings
-- In GitHub Actions, manually run `DaisyNotice Poll` and enable `send_test_notification` to trigger the same test
-
-#### `npm start`
-- Runs **continuously** in background
-- Auto-executes poll every `POLL_INTERVAL_HOURS` (default: 8 hours)
-- Stops on Ctrl+C
-- Best for: Production environment, 24/7 monitoring
+See [`.env.example`](.env.example) for the full list.
 
 ---
 
 ## Disclaimer
 
-This project is for personal learning and technical research purposes only. Using this project's scripts to access the Pilke platform may violate its Terms of Service. The author is not responsible for the consequences caused by using this tool. **Before use, carefully read the relevant Terms of Service. All risks are assumed by the user.**
+For personal learning and research only. Automating access to Pilke may violate its Terms of Service. **You assume all risk.**
 
 ---
 
 ## License
 
-MIT [LICENSE](LICENSE)
+[MIT](LICENSE)
