@@ -43,10 +43,17 @@ export async function main() {
   if (wantsTelegram) {
     console.log(`TELEGRAM_BOT_TOKEN: ${status(config.telegramBotToken)}`);
     console.log(`TELEGRAM_CHAT_ID: ${status(config.telegramChatId)}`);
+    if (!config.telegramBotToken) missing.push("TELEGRAM_BOT_TOKEN");
+    if (!config.telegramChatId) missing.push("TELEGRAM_CHAT_ID");
   }
 
   if (wantsWechat) {
     console.log(`WECHAT_WEBHOOK_URL: ${status(config.wechatWebhookUrl)}`);
+    if (!config.wechatWebhookUrl) missing.push("WECHAT_WEBHOOK_URL");
+  }
+
+  if (!wantsTelegram && !wantsWechat && !wantsEmail) {
+    missing.push("NOTIFICATION_CHANNELS (no valid channel selected)");
   }
 
   if (missing.length > 0) {

@@ -130,7 +130,7 @@ export const config = {
     "Messages",
     "Inbox",
   ]),
-  notificationChannels: (process.env.NOTIFICATION_CHANNELS || "both")
+  notificationChannels: (process.env.NOTIFICATION_CHANNELS || "telegram")
     .toLowerCase()
     .split(",")
     .map((ch) => ch.trim())

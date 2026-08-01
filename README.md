@@ -67,8 +67,8 @@ Then open **Actions** and enable workflows if GitHub asks.
 ## Alternative: run locally
 
 ```bash
-git clone https://github.com/rootSunc/daisy-notice.git
-cd daisy-notice
+git clone https://github.com/rootSunc/DaisyNotice.git
+cd DaisyNotice
 npm install
 npx playwright install chromium
 cp .env.example .env

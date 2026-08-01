@@ -67,8 +67,8 @@ Pilke 没有实时推送，也无法通知多个家庭成员。DaisyNotice 就�
 ## 备选：本地运行
 
 ```bash
-git clone https://github.com/rootSunc/daisy-notice.git
-cd daisy-notice
+git clone https://github.com/rootSunc/DaisyNotice.git
+cd DaisyNotice
 npm install
 npx playwright install chromium
 cp .env.example .env

@@ -131,7 +131,8 @@ export async function sendNotification(config, text, attachments = []) {
     getChannelsToUse(config);
 
   if (!useTelegram && !useWechat && !useEmail) {
-    const configuredChannels = config.notificationChannels?.join(",") || "both";
+    const configuredChannels =
+      config.notificationChannels?.join(",") || "telegram";
     throw new Error(
       `No available notification channel for '${configuredChannels}'. ` +
         "Ensure the selected channel secrets are configured.",
@@ -197,7 +198,7 @@ export async function sendNotification(config, text, attachments = []) {
 function getChannelsToUse(config) {
   const channels = config.notificationChannels?.length
     ? config.notificationChannels
-    : ["both"];
+    : ["telegram"];
   const useAll = channels.includes("all");
   const useBoth = channels.includes("both");
   const hasTelegramConfig = Boolean(
@@ -253,7 +254,8 @@ export async function sendFormattedNotification(
 
   // Check if at least one channel is available
   if (!useTelegram && !useWechat && !useEmail) {
-    const configuredChannels = config.notificationChannels?.join(",") || "both";
+    const configuredChannels =
+      config.notificationChannels?.join(",") || "telegram";
     throw new Error(
       `No available notification channel for '${configuredChannels}'. ` +
         "Ensure the selected channel secrets are configured.",

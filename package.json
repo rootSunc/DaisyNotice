@@ -2,11 +2,11 @@
   "name": "daisy-notice",
   "version": "0.1.0",
   "description": "Pilke DaisyFamily message polling and multi-channel notification tool",
-  "author": "Chao Sun",
+  "author": "Charles",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rootSunc/daisy-notice"
+    "url": "https://github.com/rootSunc/DaisyNotice"
   },
   "type": "module",
   "scripts": {
